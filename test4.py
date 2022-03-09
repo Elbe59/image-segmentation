@@ -16,7 +16,7 @@ filtered = cv2.bilateralFilter(img, 20, 60, 60)
 filtered = cv2.pyrMeanShiftFiltering(filtered, 21, 31)
 
 
-segments_quick = quickshift(filtered, kernel_size=11, max_dist=20, ratio=0.5)
+segments_quick = quickshift(filtered, kernel_size=10, max_dist=25, ratio=0.5)
 
 print("Quickshift number of segments: %d" % len(np.unique(segments_quick)))
 
