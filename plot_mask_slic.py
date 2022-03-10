@@ -26,6 +26,7 @@ case of irregular mask.
     images," 2016, :arXiv:`1606.09518`
 
 """
+
 from os import listdir
 import skimage.filters as filters
 from skimage import data, io, segmentation, color
@@ -40,6 +41,7 @@ from skimage import data
 from skimage import color
 from skimage import morphology
 from skimage import segmentation
+
 def show_img_with_matplotlib(color_img, title, pos):
     """Shows an image using matplotlib capabilities"""
 
@@ -50,6 +52,8 @@ def show_img_with_matplotlib(color_img, title, pos):
     plt.imshow(img_RGB)
     plt.title(title)
     plt.axis('off')
+
+
 def test():
     # Create the dimensions of the figure and set title and color:
     fig = plt.figure(figsize=(11, 10))
@@ -86,6 +90,7 @@ def test():
 
     # Show the Figure:
     plt.show()
+
 
 def _weight_mean_color(graph, src, dst, n):
     """Callback to handle merging nodes by recomputing mean color.
@@ -130,6 +135,8 @@ def merge_mean_color(graph, src, dst):
     graph.nodes[dst]['mean color'] = (graph.nodes[dst]['total color'] /
                                       graph.nodes[dst]['pixel count'])
 
+
+
 def other_method():
     g = graph.rag_mean_color(img, slic)
 
@@ -142,6 +149,8 @@ def other_method():
     print(len(out))
     plt.imshow(out)
     plt.show()
+
+
 
 def img_load():
     """
@@ -158,6 +167,9 @@ def img_load():
     # img_ref = cv2.resize(img_ref, DIM_IMG)
 
     return img_list
+
+
+
 # Input data
 img_list = img_load()
 
@@ -214,25 +226,26 @@ for img_name, img in img_list.items():
 
 
     print(data)
-    fig, ax_arr = plt.subplots(2, 2, sharex=True, sharey=True, figsize=(10, 10))
-    ax1, ax2, ax3, ax4 = ax_arr.ravel()
+    fig, axes = plt.subplots(2, 2, sharex=True, sharey=True, figsize=(10, 10))
 
-    ax1.imshow(img)
-    ax1.set_title('Original image')
+    axes[0, 0].imshow(img)
+    axes[0, 0].set_title('Original image')
+    axes[0, 0].set_axis_off()
 
-    ax2.imshow(mask, cmap='gray')
-    ax2.set_title('Mask')
+    axes[0, 1].imshow(mask, cmap='gray')
+    axes[0, 1].set_title('Mask')
+    axes[0, 1].set_axis_off()
 
-    ax3.imshow(segmentation.mark_boundaries(img, slic))
-    ax3.contour(mask, colors='red', linewidths=1)
-    ax3.set_title('SLIC')
+    axes[1, 0].imshow(m_slic, cmap=plt.cm.tab20b)
+    #axes[1, 0].imshow(segmentation.mark_boundaries(img, slic))
+    #axes[1, 0].contour(mask, colors='red', linewidths=1)
+    axes[1, 0].set_title('SLIC')
+    axes[1, 0].set_axis_off()
 
-    ax4.imshow(segmentation.mark_boundaries(img, m_slic))
-    #ax4.contour(mask, colors='red', linewidths=1)
-    ax4.set_title('maskSLIC')
-
-    for ax in ax_arr.ravel():
-        ax.set_axis_off()
+    axes[1, 1].imshow(segmentation.mark_boundaries(img, m_slic))
+    axes[1, 1].contour(mask, colors='red', linewidths=1)
+    axes[1, 1].set_title('maskSLIC')
+    axes[1, 1].set_axis_off()
 
     plt.tight_layout()
     plt.show()
