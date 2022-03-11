@@ -1,46 +1,152 @@
+from os import listdir
+from scipy import ndimage
+from skimage.feature import peak_local_max
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-
-from skimage.filters import sobel
-from skimage.measure import label
-from skimage.segmentation import watershed, expand_labels
-from skimage.color import label2rgb
-from skimage.io import imread
-from skimage.color import rgb2gray
-
-from skimage.segmentation import felzenszwalb, slic, quickshift
-
-img = imread('./Images/Echantillion1Mod2_471.png')
-img_grey = rgb2gray(img)
-"""print(img.shape)
-print(img_grey.shape)"""
-
-# Make segmentation using edge-detection and watershed.
-edges = sobel(img_grey)
-
-# Identify some background and foreground pixels from the intensity values.
-# These pixels are used as seeds for watershed.
-markers = np.zeros_like(img_grey)
-foreground, background = 1, 2
-markers[img_grey < 40.0/255] = background
-markers[img_grey > 40.0/255] = foreground
-
-ws = watershed(edges, markers, connectivity=10)
-seg1 = label(ws == foreground)
-
-# Show the segmentations.
-fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(9, 5), sharex=True, sharey=True)
-
-axes[0].imshow(img)
-axes[0].set_title('Original Image')
-axes[1].imshow(edges)
-axes[1].set_title('Sobel')
-color2 = label2rgb(seg1, image=img_grey, bg_label=0)
-axes[2].imshow(color2)
-axes[2].set_title('Sobel + Watershed')
+from skimage import exposure, morphology, segmentation
+from skimage.segmentation import watershed
+from skimage import measure
+import pandas as pd
 
 
-for a in axes:
-    a.axis('off')
-fig.tight_layout()
-plt.show()
+def load_img():
+    """
+    Description :
+    Méthode pour le chargement des images.
+    """
+
+    img_list = {}
+
+    for img in listdir('./Images/'):
+        img_list[img] = cv2.imread('./Images/' + img, type=np.uint)
+        # img_list[img] = cv2.resize(img_list[img], DIM_IMG)
+
+    return img_list
+
+
+def save_df(df, img_name):
+    """
+    Description :
+    Méthode pour la sauvegarde des dataframes au format csv
+    """
+
+    df.to_csv("./Output/Dataframes/" + img_name.split(".")[0] + '.csv', index=False, header=True)
+
+
+def save_results(img, img_name):
+    """
+    Description :
+    Méthode pour la sauvegarde des images segmentées
+    """
+
+    plt.imsave("./Output/Images/" + img_name, img)
+
+
+def display_labels(labels, img):
+    """
+    Description :
+    Méthode pour l'affichage des labels.
+    """
+    for i, segVal in enumerate(np.unique(labels)):
+        print("[x] inspecting segment %d" % i)
+
+        mask = np.zeros(img.shape[:2], dtype="uint8")
+        mask[labels == segVal] = 255
+
+        cv2.imshow("Applied", cv2.bitwise_and(img, img, mask=mask))
+        cv2.waitKey(0)
+
+
+
+def main():
+    # params
+    display = False
+
+    img_list = load_img()
+
+    for img_name, img in img_list.items():
+
+        # Contrast stretching
+        p2, p98 = np.percentile(img, (2, 98))
+        img_rescale = exposure.rescale_intensity(img, in_range=(p2, p98))
+
+        # Adaptive Equalization
+        img_eq = exposure.equalize_adapthist(img_rescale, clip_limit=0.03)
+
+        # mean shift
+        shifted = cv2.pyrMeanShiftFiltering(img_eq, 21, 31)
+
+        # threshold
+        gray = cv2.cvtColor(shifted, cv2.COLOR_BGR2GRAY)
+        thresh = cv2.threshold(gray, 40, 255, cv2.THRESH_BINARY)[1]
+        thresh = morphology.opening(thresh, morphology.disk(5)) # pour watershed pour avoir des beaux cercles et moins de petits blops :)
+
+        """
+        cv2.imshow("Img", img)
+        cv2.imshow("Thresh", thresh)
+        cv2.waitKey(0)
+        cv2.destroyWindow()
+        """
+
+        # Watershed
+
+        # compute the exact Euclidean distance from every binary
+        # pixel to the nearest zero pixel, then find peaks in this
+        # distance map
+        dist = ndimage.distance_transform_edt(thresh)
+        localMax = peak_local_max(dist, indices=False, min_distance=20, labels=thresh)
+
+        # perform a connected component analysis on the local peaks,
+        # using 8-connectivity, then appy the Watershed algorithm
+        markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
+        labels = watershed(-dist, markers, mask=thresh)
+        print("[INFO] {} unique segments found".format(len(np.unique(labels)) - 1))
+
+        # rgb mean
+        regions = measure.regionprops(labels, intensity_image=img)
+        data = pd.DataFrame(columns=["Grain isolé n°", "Moyenne de B", "Moyenne de G", "Moyenne de R"])
+        for i in range(len(np.unique(labels)) - 1):
+            r = regions[i]
+            data.loc[i] = ['Grain isolé n°' + str(i + 1)] \
+                          + [round(r.intensity_mean[0], 2)] \
+                          + [round(r.intensity_mean[1], 2)] \
+                          + [round(r.intensity_mean[2], 2)]
+
+        if display:
+            display_labels(labels, img)
+
+        # display
+        fig, axes = plt.subplots(ncols=2, figsize=(9, 3), sharex=True, sharey=True)
+        ax = axes.ravel()
+
+        ax[0].imshow(img, cmap=plt.cm.gray)
+        ax[0].set_title('Image')
+
+        #ax[1].imshow(labels, cmap=plt.cm.tab20b)
+        ax[1].imshow(img)
+        ax[1].contour(labels, colors='yellow', linewidths=0.5)
+        ax[1].set_title('Segmentation')
+
+
+        for a in ax:
+            a.set_axis_off()
+
+        fig.tight_layout()
+        plt.show()
+
+        save_df(data, img_name)
+        save_results(segmentation.mark_boundaries(img, labels), img_name)
+
+
+
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
