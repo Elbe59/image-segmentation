@@ -33,7 +33,7 @@ def plot_img_and_hist(image, axes, bins=256):
 
 
 img = imread('./Images/Echantillion1Mod2_301.png')
-img = cv2.pyrMeanShiftFiltering(img, 21, 31)
+img = cv2.pyrMeanShiftFiltering(img, 11, 21)
 
 # Contrast stretching
 p2, p98 = np.percentile(img, (2, 98))
