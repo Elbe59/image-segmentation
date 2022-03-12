@@ -19,8 +19,7 @@ def load_img():
     img_list = {}
 
     for img in listdir('./Images/'):
-        img_list[img] = cv2.imread('./Images/' + img, type=np.uint)
-        # img_list[img] = cv2.resize(img_list[img], DIM_IMG)
+        img_list[img] = cv2.imread('./Images/' + img)
 
     return img_list
 
@@ -71,23 +70,24 @@ def main():
         p2, p98 = np.percentile(img, (2, 98))
         img_rescale = exposure.rescale_intensity(img, in_range=(p2, p98))
 
-        # Adaptive Equalization
-        img_eq = exposure.equalize_adapthist(img_rescale, clip_limit=0.03)
+        # Adaptive Equalization (luminosité)
+        img_rescale = (img_rescale / 255).astype("float32")
+        img_eq = exposure.equalize_adapthist(img_rescale, clip_limit=0.01)
+        img_eq = (img_eq * 255).astype("uint8")
 
         # mean shift
-        shifted = cv2.pyrMeanShiftFiltering(img_eq, 21, 31)
+        shifted = cv2.pyrMeanShiftFiltering(img_eq, 21, 31) # à revoir
 
         # threshold
         gray = cv2.cvtColor(shifted, cv2.COLOR_BGR2GRAY)
-        thresh = cv2.threshold(gray, 40, 255, cv2.THRESH_BINARY)[1]
-        thresh = morphology.opening(thresh, morphology.disk(5)) # pour watershed pour avoir des beaux cercles et moins de petits blops :)
+        thresh = cv2.threshold(gray, 60, 255, cv2.THRESH_BINARY)[1]
+        thresh = morphology.opening(thresh, morphology.disk(10)) # pour watershed pour avoir des beaux cercles et moins de petits blops :)
+        # mettre erode dilate simple
 
-        """
-        cv2.imshow("Img", img)
+        """cv2.imshow("Img", img)
         cv2.imshow("Thresh", thresh)
         cv2.waitKey(0)
-        cv2.destroyWindow()
-        """
+        cv2.destroyWindow()"""
 
         # Watershed
 
@@ -116,11 +116,10 @@ def main():
         if display:
             display_labels(labels, img)
 
-        # display
         fig, axes = plt.subplots(ncols=2, figsize=(9, 3), sharex=True, sharey=True)
         ax = axes.ravel()
 
-        ax[0].imshow(img, cmap=plt.cm.gray)
+        ax[0].imshow(img)
         ax[0].set_title('Image')
 
         #ax[1].imshow(labels, cmap=plt.cm.tab20b)
