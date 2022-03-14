@@ -43,7 +43,7 @@ def save_results(img, img_name):
     Méthode pour la sauvegarde des images segmentées.
     """
 
-    plt.imsave("./Output/Images/" + img_name.split('.')[0] + "_segmented." + img_name.split('.')[1], img)
+    plt.imsave("./Output/Images/" + img_name.split('.')[0] + "_segmented." + img_name.split('.')[1], img[:, :, ::-1])
 
 
 def display_segments(labels, img):
