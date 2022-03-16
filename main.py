@@ -1,6 +1,6 @@
-import sys
+import argparse
 import warnings
-from os import listdir
+
 import numpy as np
 import cv2
 from scipy import ndimage
@@ -11,10 +11,11 @@ from skimage.segmentation import watershed
 import matplotlib.pyplot as plt
 import pandas as pd
 from skimage.color import label2rgb
+import sys
 
 
 
-def load_img():
+def load_img(folder):
     """
     Description :
     Méthode pour le chargement des images.
@@ -22,8 +23,8 @@ def load_img():
 
     img_list = {}
 
-    for img in listdir('./Images/'):
-        img_list[img] = cv2.imread('./Images/' + img)
+    for img in listdir(folder):
+        img_list[img] = cv2.imread(folder + img)
 
     return img_list
 
@@ -96,16 +97,19 @@ def calc_mean(labels, img):
 
 
 def main():
+    # parsing des arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("repo", help="The path of repository folder where it is possible to find the image. Ex: ./Images/")
+    args = parser.parse_args()
 
-    # args
-    display = True
 
     # warnings suppression
     if not sys.warnoptions:
         warnings.simplefilter("ignore")
 
     # load image
-    img_list = load_img()
+
+    img_list = load_img(args.repo)
 
     for img_name, img in img_list.items():
 
@@ -140,36 +144,35 @@ def main():
         print("[INFO] {} unique segments found".format(len(np.unique(labels)) - 1))
 
         #--- rgb mean ---
-        data = calc_mean(labels, img)
+        data = calc_mean(labels, img) # Calcul du Dataframe contenant la moyenne de chaque channel pour chaque grain
 
         #--- save results ---
-        save_df(data, img_name)
-        save_results(segmentation.mark_boundaries(img[:, :, ::-1], labels), img_name)
+        save_df(data, img_name) # Sauvegarde du Dataframe contenant la moyenne de chaque channel pour chaque grain
+        save_results(segmentation.mark_boundaries(img[:, :, ::-1], labels), img_name) # Sauvegarde de l'image segmentée
 
         #--- display ---
-        if display:
-            fig, axes = plt.subplots(ncols=4, figsize=(12, 3))
-            fig.canvas.manager.set_window_title(img_name)
+        fig, axes = plt.subplots(ncols=4, figsize=(12, 3))
+        fig.canvas.manager.set_window_title(img_name)
 
-            axes[0].imshow(img[:, :, ::-1])
-            axes[0].set_title('Image')
+        axes[0].imshow(img[:, :, ::-1])
+        axes[0].set_title('Image')
 
-            axes[1].imshow(shifted[:, :, ::-1])
-            axes[1].set_title('Contrast +  Filter')
+        axes[1].imshow(shifted[:, :, ::-1])
+        axes[1].set_title('Contrast +  Filter')
 
-            axes[2].imshow(thresh, cmap='gray')
-            axes[2].contour(localMax, colors='red', linewidths=1)
-            axes[2].set_title('Threshold + LocalMax')
+        axes[2].imshow(thresh, cmap='gray')
+        axes[2].contour(localMax, colors='red', linewidths=1)
+        axes[2].set_title('Threshold + LocalMax')
 
-            axes[3].imshow(label2rgb(labels, image=img[:, :, ::-1]))
-            axes[3].contour(labels, colors='yellow', linewidths=0.2)
-            axes[3].set_title('Segmentation')
+        axes[3].imshow(label2rgb(labels, image=img[:, :, ::-1]))
+        axes[3].contour(labels, colors='yellow', linewidths=0.2)
+        axes[3].set_title('Segmentation')
 
-            for a in axes.ravel():
-                a.set_axis_off()
+        for a in axes.ravel():
+            a.set_axis_off()
 
-            fig.tight_layout()
-            plt.show()
+        fig.tight_layout()
+        plt.show()
 
 
 if __name__ == "__main__":
