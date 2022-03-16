@@ -13,10 +13,11 @@ Ce projet a pour objectif la segmentation de différentes images d'échantillons
 - Il est possible de changer de répertoire en remplaçant le dossier d'image
 
 ## Visualisation et sauvegarde des résultats
-Après avoir exécuté le programme avec la commande ci dessus, les résultats s'afficheront un par un sur une fenêtre matplotlib
-contenant 4 visuels, l'image d'origine, l'image après prétraitement, le local max de chaque segment et pour finir l'image segmentée avec une coloration de chaque segment pour une meilleure visualisation.
-Pour finir les résultats finaux avec tous les segments identifiés avec un contour jaune se trouvera dans le dossier Output/Images
-Et les Dataframes correspondant se trouveront dans le dossier Output/Dataframes
+Pendant l’exécution du programme les résultats s'afficheront un par un sur une fenêtre matplotlib contenant 4 visuels, l'image d'origine, l'image après prétraitement, le local max de chaque segment et pour finir l'image segmentée avec une coloration de chaque segment pour une meilleure visualisation.
+
+Après exécution les résultats de notre algorithme de segmentation se trouveront dans le dossier “Output/Images”, chaque fichier de ce dossier présente un échantillon avec par dessus la segmentation (chaque segment possède un contour jaune).
+Ensuite les Dataframes contenant la moyenne de chacun des channels BGR de chaque grain isolé seront stockés dans le dossier Output/Dataframes
+
 
 
 
