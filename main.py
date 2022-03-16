@@ -1,7 +1,7 @@
 import argparse
 import warnings
 from os import listdir
-
+from os import listdir
 import numpy as np
 import cv2
 from scipy import ndimage
@@ -98,17 +98,17 @@ def calc_mean(labels, img):
 
 
 def main():
-    # parsing des arguments
+    #--- parsing des arguments ---
     parser = argparse.ArgumentParser()
     parser.add_argument("repo", help="The path of repository folder where it is possible to find the image. Ex: ./Images/")
     args = parser.parse_args()
 
 
-    # warnings suppression
+    #--- warnings suppression ---
     if not sys.warnoptions:
         warnings.simplefilter("ignore")
 
-    # load image
+    #--- image loading ---
 
     img_list = load_img(args.repo)
 
@@ -129,14 +129,8 @@ def main():
         thresh = morphology.opening(thresh, morphology.disk(5))
 
         #--- Watershed ---
-        # compute the exact Euclidean distance from every binary
-        # pixel to the nearest zero pixel, then find peaks in this
-        # distance map
         dist = ndimage.distance_transform_edt(thresh)
         localMax = peak_local_max(dist, indices=False, min_distance=20, labels=thresh)
-
-        # perform a connected component analysis on the local peaks,
-        # using 8-connectivity, then appy the Watershed algorithm
         markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
         labels = watershed(-dist, markers, mask=thresh)
 
